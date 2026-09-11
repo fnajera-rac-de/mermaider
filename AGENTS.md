@@ -28,6 +28,8 @@ Three-stage pipeline: **Parse** → **Layout** → **Render**
 2. **Layout** (`src/Mermaider/Layout/`): Sugiyama (flowchart/class/ER) or custom arithmetic (sequence) produces positioned models
 3. **Rendering** (`src/Mermaider/Rendering/`): Pooled StringBuilder produces SVG string
 
+Flowchart node shapes include the two parallelograms (`[/text/]`, `[\text\]`) as well as the two trapezoids.
+
 Supported diagram types: flowchart, state, sequence, class, ER, pie, quadrant, timeline, gitgraph, radar, treemap, venn, mindmap, gantt, journey, C4, sankey, xychart, requirement, packet, kanban, architecture, block, treeview.
 
 Adding a type: see `docs/agent-add-diagram-type.md` (playbook for parallel agents).
@@ -69,6 +71,6 @@ Hosts may raise limits selectively or set `Limits = ResourceLimits.Unlimited` fo
 
 ## Public API
 
-- Library: `MermaidRenderer.RenderSvg(text, options?)` and `MermaidRenderer.Parse(text)`
+- Library: `MermaidRenderer.RenderSvg(text, options?)`, `MermaidRenderer.RenderAscii(text, options?)` (flowchart, state and xychart, drawn as characters on a grid the Sugiyama layout is run in) and `MermaidRenderer.Parse(text)`
 - CLI: `mermaid [options] [input-file]` — reads from stdin or file, writes SVG to stdout or file
   - `--theme <name>`, `--transparent`, `--list-themes`, `--output <file>`
