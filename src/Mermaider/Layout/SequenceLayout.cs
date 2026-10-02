@@ -13,6 +13,7 @@ internal static class SequenceLayout
 	private const double HeaderGap = 30;
 	private const double MessageRowHeight = 50;
 	private const double SelfMessageHeight = 30;
+	private const double SelfLoopHeight = 20;
 	private const double ActivationWidth = 10;
 	private const double BlockPadX = 10;
 	private const double BlockPadTop = 40;
@@ -297,7 +298,10 @@ internal static class SequenceLayout
 			var refMsg = note.AfterIndex >= 0 && note.AfterIndex < messages.Count
 				? messages[note.AfterIndex]
 				: null;
-			var noteY = (refMsg?.Y ?? (actorY + ActorHeight)) + noteMargin;
+			var noteAnchorOffset = refMsg?.IsSelf == true
+				? SelfLoopHeight + GetExtraMessageHeight(refMsg.Label)
+				: 0;
+			var noteY = (refMsg?.Y ?? (actorY + ActorHeight)) + noteAnchorOffset + noteMargin;
 
 			_ = actorIndex.TryGetValue(note.ActorIds[0], out var firstActorIdx);
 			double noteX;
@@ -477,4 +481,13 @@ internal static class SequenceLayout
 				NoteFontSize,
 				RenderConstants.FontWeights.EdgeLabel).LineCount - 1) * NoteFontSize * TextMetrics.LineHeightRatio) +
 			(NoteVPad * 2);
+
+	private static double GetExtraMessageHeight(string text)
+	{
+		var metrics = TextMetrics.MeasureMultiline(
+			text.AsSpan(),
+			RenderConstants.FontSizes.SeqMessageLabel,
+			RenderConstants.FontWeights.EdgeLabel);
+		return (metrics.LineCount - 1) * metrics.LineHeight;
+	}
 }

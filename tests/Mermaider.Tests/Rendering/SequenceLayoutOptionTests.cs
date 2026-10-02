@@ -126,6 +126,29 @@ public class SequenceLayoutOptionTests
 		(yPositions[1] - yPositions[0]).Should().BeGreaterThan(yPositions[2] - yPositions[1]);
 	}
 
+	[Test]
+	public void Note_after_self_message_starts_below_the_loop()
+	{
+		var doc = XDocument.Parse(MermaidRenderer.RenderSvg("""
+			sequenceDiagram
+			Alice-->>Alice: Encrypted log file
+			Note over Alice,Bob: Send logs
+			"""));
+		var selfMessage = doc.Descendants().First(element =>
+			(string?)element.Attribute("class") == "message" && (string?)element.Attribute("data-self") == "true");
+		var loop = selfMessage.Descendants().First(element => element.Name.LocalName == "polyline");
+		var loopBottom = loop.Attribute("points")!.Value
+			.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+			.Select(point => double.Parse(point.Split(',')[1], CultureInfo.InvariantCulture))
+			.Max();
+		var noteRect = doc.Descendants()
+			.First(element => (string?)element.Attribute("class") == "note")
+			.Descendants()
+			.First(element => element.Name.LocalName == "rect");
+
+		double.Parse(noteRect.Attribute("y")!.Value, CultureInfo.InvariantCulture).Should().BeGreaterThan(loopBottom);
+	}
+
 	private static double SvgHeight(string svg) =>
 		double.Parse(XDocument.Parse(svg).Root!.Attribute("height")!.Value, CultureInfo.InvariantCulture);
 }
