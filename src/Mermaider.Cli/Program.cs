@@ -1,3 +1,4 @@
+using System.Globalization;
 using Mermaider;
 using Mermaider.Models;
 using Mermaider.Theming;
@@ -28,6 +29,11 @@ var transparent = true;
 var ascii = false;
 var plain = false;
 var width = 120;
+double? padding = null;
+double? nodeSpacing = null;
+double? layerSpacing = null;
+double? sequenceMessageMargin = null;
+double? sequenceNoteMargin = null;
 
 for (var i = 0; i < args.Length; i++)
 {
@@ -57,6 +63,33 @@ for (var i = 0; i < args.Length; i++)
 			break;
 		case "--width" when i + 1 < args.Length:
 			_ = int.TryParse(args[++i], out width);
+			break;
+		case "--padding" or "--node-spacing" or "--layer-spacing" or "--sequence-message-margin" or "--sequence-note-margin":
+			var spacingOption = args[i];
+			if (i + 1 >= args.Length || !double.TryParse(args[++i], NumberStyles.Float, CultureInfo.InvariantCulture, out var spacing))
+			{
+				Console.Error.WriteLine($"Error: {spacingOption} requires a number.");
+				return 1;
+			}
+
+			switch (spacingOption)
+			{
+				case "--padding":
+					padding = spacing;
+					break;
+				case "--node-spacing":
+					nodeSpacing = spacing;
+					break;
+				case "--layer-spacing":
+					layerSpacing = spacing;
+					break;
+				case "--sequence-message-margin":
+					sequenceMessageMargin = spacing;
+					break;
+				case "--sequence-note-margin":
+					sequenceNoteMargin = spacing;
+					break;
+			}
 			break;
 		default:
 			if (!args[i].StartsWith('-') && inputFile == null)
@@ -92,7 +125,7 @@ if (string.IsNullOrWhiteSpace(input))
 	return 1;
 }
 
-var options = BuildOptions(themeName, transparent);
+var options = BuildOptions(themeName, transparent, padding, nodeSpacing, layerSpacing, sequenceMessageMargin, sequenceNoteMargin);
 
 try
 {
@@ -131,7 +164,14 @@ catch (Exception ex)
 	return 2;
 }
 
-static RenderOptions BuildOptions(string? themeName, bool transparent)
+static RenderOptions BuildOptions(
+	string? themeName,
+	bool transparent,
+	double? padding,
+	double? nodeSpacing,
+	double? layerSpacing,
+	double? sequenceMessageMargin,
+	double? sequenceNoteMargin)
 {
 	DiagramColors colors;
 	if (themeName != null && Themes.BuiltIn.TryGetValue(themeName, out var theme))
@@ -154,6 +194,11 @@ static RenderOptions BuildOptions(string? themeName, bool transparent)
 		Surface = colors.Surface,
 		Border = colors.Border,
 		Transparent = transparent,
+		Padding = padding,
+		NodeSpacing = nodeSpacing,
+		LayerSpacing = layerSpacing,
+		SequenceMessageMargin = sequenceMessageMargin,
+		SequenceNoteMargin = sequenceNoteMargin,
 	};
 }
 
@@ -170,6 +215,13 @@ static void PrintHelp() => Console.WriteLine("""
 		  --ascii                 Draw the diagram as text instead of SVG
 		  --plain                 As --ascii, with no characters above ASCII
 		  --width <n>             How wide text output may be (default 120)
+		  --padding <n>           Canvas padding in SVG pixels
+		  --node-spacing <n>      Horizontal spacing between graph siblings
+		  --layer-spacing <n>     Vertical spacing between graph layers and sequence messages
+		  --sequence-message-margin <n>
+		                           Vertical spacing between sequence messages (overrides --layer-spacing)
+		  --sequence-note-margin <n>
+		                           Top margin for sequence notes (default 16)
 		  -t, --theme <name>     Theme name (use --list-themes to see options)
 		  --transparent           Transparent background (default)
 		  --no-transparent        Opaque background (uses --bg color)

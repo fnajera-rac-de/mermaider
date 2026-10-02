@@ -503,6 +503,15 @@ mermaid input.mmd --plain --width 80
 mermaid --list-themes
 ```
 
+Layout spacing can be adjusted from the CLI when a diagram needs more room:
+
+```bash
+mermaid sequence.mmd --layer-spacing 80
+mermaid sequence.mmd --sequence-message-margin 80 --sequence-note-margin 20
+```
+
+`--sequence-message-margin` takes precedence over `--layer-spacing` for sequence diagrams.
+
 ## <a name="msagl-layout-provider"></a>MSAGL Layout Provider
 
 If you prefer MSAGL for its edge routing fidelity on complex graphs, install the optional package:

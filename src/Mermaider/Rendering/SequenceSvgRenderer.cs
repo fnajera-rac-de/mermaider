@@ -207,8 +207,12 @@ internal static class SequenceSvgRenderer
 		if (msg.IsSelf)
 		{
 			const double loopW = 30;
-			const double loopH = 20;
 			const double labelPadding = 8;
+			var labelMetrics = TextMetrics.MeasureMultiline(
+				msg.Label.AsSpan(),
+				RenderConstants.FontSizes.SeqMessageLabel,
+				RenderConstants.FontWeights.EdgeLabel);
+			var loopH = 20 + ((labelMetrics.LineCount - 1) * labelMetrics.LineHeight);
 
 			_ = sb.Append("  <polyline points=\"")
 				.Append(msg.X1).Append(',').Append(msg.Y).Append(' ')
@@ -237,8 +241,13 @@ internal static class SequenceSvgRenderer
 			var midX = (msg.X1 + msg.X2) / 2;
 			var label = msg.Label;
 			AppendAutoNumberBadge(sb, ref label, msg);
+			var labelMetrics = TextMetrics.MeasureMultiline(
+				label.AsSpan(),
+				RenderConstants.FontSizes.SeqMessageLabel,
+				RenderConstants.FontWeights.EdgeLabel);
+			var labelY = msg.Y - 14 - ((labelMetrics.LineCount - 1) * labelMetrics.LineHeight / 2);
 			MultilineUtils.AppendMultilineText(
-				sb, label, midX, msg.Y - 14,
+				sb, label, midX, labelY,
 				RenderConstants.FontSizes.SeqMessageLabel,
 				MessageLabelCenterAttrs);
 			_ = sb.Append('\n');

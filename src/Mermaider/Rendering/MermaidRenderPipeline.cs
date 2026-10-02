@@ -267,7 +267,7 @@ internal static class DiagramSvgStage
 				{
 					var parsed = SequenceParser.Parse(lines);
 					ResourceGuard.CheckElements(parsed.Actors.Count + parsed.Messages.Count + parsed.Notes.Count, limits);
-					sb = SequenceSvgRenderer.RenderToBuilder(SequenceLayout.Layout(parsed), context);
+					sb = SequenceSvgRenderer.RenderToBuilder(SequenceLayout.Layout(parsed, request.Options), context);
 					break;
 				}
 			case DiagramType.Class:

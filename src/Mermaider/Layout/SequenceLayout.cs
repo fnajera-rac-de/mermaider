@@ -23,10 +23,12 @@ internal static class SequenceLayout
 	private const double NoteVPad = 12;
 	private const double NoteHPad = 14;
 	private const double NoteGap = 10;
+	private const double NoteMargin = 16;
+	private const double NoteOverMargin = 4;
 	private const double NoteFontSize = 14;
 	private const double NestingOffset = 4;
 
-	internal static PositionedSequenceDiagram Layout(SequenceDiagram diagram)
+	internal static PositionedSequenceDiagram Layout(SequenceDiagram diagram, RenderOptions? options = null)
 	{
 		if (diagram.Actors.Count == 0)
 		{
@@ -93,6 +95,13 @@ internal static class SequenceLayout
 		foreach (var d in diagram.Destroys)
 			_ = destroyedAt.TryAdd(d.ActorId, d.AtMessageIndex);
 
+		var messageRowHeight = Math.Max(0, options?.SequenceMessageMargin ?? options?.LayerSpacing ?? MessageRowHeight);
+		var noteMargin = options?.SequenceNoteMargin is { } configuredNoteMargin
+			? Math.Max(0, configuredNoteMargin)
+			: NoteMargin;
+		var noteOverMargin = options?.SequenceNoteMargin is { } configuredNoteOverMargin
+			? Math.Max(0, configuredNoteOverMargin)
+			: NoteOverMargin;
 		var messageY = actorY + ActorHeight + HeaderGap;
 		var messages = new List<PositionedSequenceMessage>(diagram.Messages.Count);
 
@@ -130,9 +139,16 @@ internal static class SequenceLayout
 			_ = actorIndex.TryGetValue(msg.From, out var fromIdx);
 			_ = actorIndex.TryGetValue(msg.To, out var toIdx);
 			var isSelf = msg.From == msg.To;
+			var messageMetrics = TextMetrics.MeasureMultiline(
+				msg.Label.AsSpan(),
+				RenderConstants.FontSizes.SeqMessageLabel,
+				RenderConstants.FontWeights.EdgeLabel);
+			var extraMessageHeight = (messageMetrics.LineCount - 1) * messageMetrics.LineHeight;
 
 			if (extraSpaceBefore.TryGetValue(msgIdx, out var extra) && extra > 0)
 				messageY += extra;
+			if (!isSelf)
+				messageY += extraMessageHeight;
 
 			messages.Add(new PositionedSequenceMessage
 			{
@@ -172,17 +188,22 @@ internal static class SequenceLayout
 				});
 			}
 
-			messageY += isSelf ? SelfMessageHeight + MessageRowHeight : MessageRowHeight;
+			messageY += (isSelf ? SelfMessageHeight + extraMessageHeight : 0) + messageRowHeight;
 
 			if (notesByAfterIndex.TryGetValue(msgIdx, out var noteIndices))
 			{
+				var sideNoteExtra = 0.0;
 				foreach (var ni in noteIndices)
 				{
-					var noteH = NoteFontSize + (NoteVPad * 2);
+					var noteH = MeasureNoteHeight(diagram.Notes[ni].Text);
 					var notePosition = diagram.Notes[ni].Position;
 					if (notePosition == SequenceNotePosition.Over)
-						messageY += noteH + 4;
+						messageY += noteH + noteOverMargin;
+					else
+						sideNoteExtra = Math.Max(sideNoteExtra, Math.Max(0, noteMargin + noteH - messageRowHeight));
 				}
+
+				messageY += sideNoteExtra;
 			}
 		}
 
@@ -271,12 +292,12 @@ internal static class SequenceLayout
 				NoteFontSize,
 				RenderConstants.FontWeights.EdgeLabel) + (NoteHPad * 2);
 			var noteW = Math.Max(NoteWidth, textW);
-			var noteH = NoteFontSize + (NoteVPad * 2);
+			var noteH = MeasureNoteHeight(note.Text);
 
 			var refMsg = note.AfterIndex >= 0 && note.AfterIndex < messages.Count
 				? messages[note.AfterIndex]
 				: null;
-			var noteY = (refMsg?.Y ?? (actorY + ActorHeight)) + 10;
+			var noteY = (refMsg?.Y ?? (actorY + ActorHeight)) + noteMargin;
 
 			_ = actorIndex.TryGetValue(note.ActorIds[0], out var firstActorIdx);
 			double noteX;
@@ -448,4 +469,12 @@ internal static class SequenceLayout
 			DestroyMarkers = destroyMarkers,
 		};
 	}
+
+	private static double MeasureNoteHeight(string text) =>
+		NoteFontSize +
+			((TextMetrics.MeasureMultiline(
+				text.AsSpan(),
+				NoteFontSize,
+				RenderConstants.FontWeights.EdgeLabel).LineCount - 1) * NoteFontSize * TextMetrics.LineHeightRatio) +
+			(NoteVPad * 2);
 }

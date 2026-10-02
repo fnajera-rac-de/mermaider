@@ -53,8 +53,14 @@ public sealed record RenderOptions
 	/// <summary>Horizontal spacing between sibling nodes. Default: 28.</summary>
 	public double? NodeSpacing { get; init; }
 
-	/// <summary>Vertical spacing between layers. Default: 48.</summary>
+	/// <summary>Vertical spacing between layers, and between sequence messages when no sequence-specific margin is set.</summary>
 	public double? LayerSpacing { get; init; }
+
+	/// <summary>Vertical distance between sequence message rows. When null, <see cref="LayerSpacing"/> is used, then the sequence default.</summary>
+	public double? SequenceMessageMargin { get; init; }
+
+	/// <summary>Top margin used to position sequence notes and reserve space for side notes. Default: 16.</summary>
+	public double? SequenceNoteMargin { get; init; }
 
 	/// <summary>Use rounded corners on edge paths. Default: true (radius 6px).</summary>
 	public bool RoundedEdges { get; init; } = true;
